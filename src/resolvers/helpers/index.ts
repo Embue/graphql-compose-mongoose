@@ -10,6 +10,8 @@ export * from './record';
 export * from './skip';
 export * from './sort';
 
+export * from './beforeQueryHelper';
+
 export const MergeAbleHelperArgsOpts = {
   sort: 'boolean',
   skip: 'boolean',
