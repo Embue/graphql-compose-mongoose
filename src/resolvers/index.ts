@@ -18,6 +18,8 @@ import { dataLoaderMany, DataLoaderManyResolverOpts } from './dataLoaderMany';
 import { pagination, PaginationResolverOpts } from './pagination';
 import { connection, ConnectionResolverOpts } from './connection';
 
+export * from './helpers';
+
 export type AllResolversOpts = {
   count?: false | CountResolverOpts;
   findById?: false | FindByIdResolverOpts;
