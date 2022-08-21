@@ -87,3 +87,5 @@ export {
   PaginationResolverOpts,
   ConnectionResolverOpts,
 };
+
+export { getChildDataLoaderResolver } from './childDataLoader';
