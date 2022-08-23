@@ -2,10 +2,12 @@ import { toInputType } from 'graphql-compose';
 import type { Resolver, ObjectTypeComposer, InterfaceTypeComposer } from 'graphql-compose';
 import type { Model, Document } from 'mongoose';
 import {
-  limitHelperArgs,
-  skipHelperArgs,
+  perPageHelperArgs,
+  pageHelperArgs,
   filterHelper,
   filterHelperArgs,
+  perPageHelper,
+  pageHelper,
   sortHelper,
   sortHelperArgs,
   projectionHelper,
@@ -13,12 +15,20 @@ import {
   prepareAliasesReverse,
   replaceAliases,
   FilterHelperArgsOpts,
+  PerPageHelperArgsOpts,
   SortHelperArgsOpts,
-  LimitHelperArgsOpts,
 } from './helpers';
 import type { ExtendedResolveParams } from '../';
 import { beforeQueryHelper, beforeQueryHelperLean } from './helpers/beforeQueryHelper';
 import { getChildDataLoader } from './helpers/childDataLoaderHelper';
+import { PaginationInfoType, PaginationType } from 'graphql-compose-pagination';
+import { preparePaginationTC } from '../types/paginationTypes';
+
+type ChildDataLoaderPaginationType<T> = PaginationType & {
+  count: number;
+  items: T[];
+  pageInfo: PaginationInfoType;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface DataLoaderResolverOpts {
@@ -39,26 +49,34 @@ export interface DataLoaderResolverOpts {
 type TArgs<T> = {
   _id: T;
   filter?: any;
-  limit?: number;
-  skip?: number;
+  perPage?: number;
+  page?: number;
   sort?: string | string[] | Record<string, any>;
 };
 
-export interface ChildDataLoaderResolverOpts extends DataLoaderResolverOpts {
+export type perPageHelperArgsOpts = {
+  /**
+   * Set the default number of items returned per page if one is not provided in the query.
+   * By default, this will be 20.
+   */
+  defaultPerPage?: number;
+};
+
+export interface PaginatedChildDataLoaderResolverOpts extends DataLoaderResolverOpts {
   parentSelector: string;
   /** If you want to generate different resolvers you may avoid Type name collision by adding a suffix to type names */
   suffix?: string;
   /** Customize input-type for `filter` argument. If `false` then arg will be removed. */
   filter?: FilterHelperArgsOpts | false;
   sort?: SortHelperArgsOpts | false;
-  limit?: LimitHelperArgsOpts | false;
-  skip?: false;
+  perPage?: PerPageHelperArgsOpts | false;
+  page?: false;
 }
 
-export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T = string>(
+export function paginatedChildDataLoader<TSource, TContext, TDoc extends Document<T>, T = string>(
   model: Model<TDoc>,
   tc: ObjectTypeComposer<TDoc, TContext> | InterfaceTypeComposer<TDoc, TContext>,
-  opts: ChildDataLoaderResolverOpts
+  opts: PaginatedChildDataLoaderResolverOpts
 ): Resolver<TSource, TContext, TArgs<T>, TDoc> {
   if (!model || !model.modelName || !model.schema) {
     throw new Error(
@@ -76,8 +94,8 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
   const aliasesReverse = prepareAliasesReverse(model.schema);
 
   return tc.schemaComposer.createResolver<TSource, TArgs<T>>({
-    type: tc.List.NonNull,
-    name: 'childDataLoader',
+    type: preparePaginationTC(tc, 'paginatedChildDataLoader'),
+    name: 'paginatedChildDataLoader',
     kind: 'query',
     args: {
       _id: tc.hasField('_id') ? toInputType(tc.getFieldTC('_id')).NonNull : 'MongoID!',
@@ -86,10 +104,10 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
         suffix: `${opts?.suffix || ''}Input`,
         ...opts?.filter,
       }),
-      ...skipHelperArgs(),
-      ...limitHelperArgs({
-        ...opts?.limit,
+      ...perPageHelperArgs({
+        ...opts?.perPage,
       }),
+      ...pageHelperArgs(),
       ...sortHelperArgs(tc, model, {
         sortTypeName: `SortFindMany${tc.getTypeName()}${opts?.suffix || ''}Input`,
         ...opts?.sort,
@@ -120,6 +138,22 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
         resolveParams.model = model;
         filterHelper(resolveParams, aliases);
         sortHelper(resolveParams);
+
+        const projection = resolveParams.projection || {};
+        delete projection.pageInfo;
+        const newProjection: typeof projection = {};
+        for (const [key, value] of Object.entries(projection.items || {})) {
+          newProjection[key] = value;
+        }
+        delete projection.items;
+        delete projection.count;
+
+        for (const [key, value] of Object.entries(projection || {})) {
+          newProjection[key] = value;
+        }
+
+        resolveParams.projection = newProjection;
+
         projectionHelper(resolveParams, aliases);
 
         if (opts?.lean) {
@@ -140,28 +174,54 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
       );
 
       return dl.load(args._id).then((res) => {
+        const perPage = perPageHelper(resolveParams);
+        let page = pageHelper(resolveParams);
+        let pageCount = 0;
+        let itemCount = 0;
+        let items: Model<TDoc>[];
         if (res) {
-          const start = resolveParams.args.skip || 0;
-          const end = resolveParams.args.limit
-            ? Math.min(start + resolveParams.args.limit, res.length)
-            : res.length;
-          return res.slice(start, end);
+          pageCount = Math.ceil(res.length / perPage);
+          page = Math.min(page, pageCount);
+          itemCount = res.length;
+          const start = Math.max((page - 1) * perPage, 0);
+          const end = page > 0 ? Math.min(start + perPage, res.length) : res.length;
+          items = res.slice(start, end) as any as Model<TDoc>[];
         } else {
-          return [];
+          items = [];
         }
+
+        const pageInfo: PaginationInfoType = {
+          currentPage: page,
+          perPage,
+          itemCount,
+          pageCount,
+          hasPreviousPage: page > 1,
+          hasNextPage: page < pageCount,
+        };
+        const result: ChildDataLoaderPaginationType<Model<TDoc>> = {
+          count: itemCount,
+          items,
+          pageInfo,
+        };
+        return result;
       });
     }) as never,
   });
 }
 
-export function getChildDataLoaderResolver<TSource, TContext, TDoc extends Document<T>, T = string>(
+export function getPaginatedChildDataLoaderResolver<
+  TSource,
+  TContext,
+  TDoc extends Document<T>,
+  T = string
+>(
   model: Model<TDoc>,
   tc: ObjectTypeComposer<TDoc, TContext> | InterfaceTypeComposer<TDoc, TContext>
-): (opts: ChildDataLoaderResolverOpts) => Resolver<TSource, TContext> {
+): (opts: PaginatedChildDataLoaderResolverOpts) => Resolver<TSource, TContext> {
   const typedFn: (
     model: Model<TDoc>,
     tc: ObjectTypeComposer<TDoc, TContext> | InterfaceTypeComposer<TDoc, TContext>,
-    opts: ChildDataLoaderResolverOpts
-  ) => Resolver<TSource, TContext, TArgs<T>, TDoc> = childDataLoader;
+    opts: PaginatedChildDataLoaderResolverOpts
+  ) => Resolver<TSource, TContext, TArgs<T>, TDoc> = paginatedChildDataLoader;
   return typedFn.bind(undefined, model, tc);
 }

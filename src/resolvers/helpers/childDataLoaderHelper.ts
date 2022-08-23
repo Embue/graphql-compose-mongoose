@@ -17,20 +17,11 @@ export function getChildDataLoader<
   }
 
   const { _gqlDataLoaders } = context;
-
-  // for different parts of GraphQL queries, key will be new
-  // const dlKey = [
-  //   info.parentType.toString(),
-  //   info.returnType.toString(),
-  //   info.fieldNodes.map((fn: FieldNode) => fn.name.value).join(':'),
-  // ];
-
   const dlKey = info.fieldNodes;
 
   // get or create DataLoader in GraphQL context
   let dl: DataLoader<KeyType, ModelType[], string> = _gqlDataLoaders.get(dlKey);
   if (!dl) {
-    console.log('Did not find data loader!');
     const dataLoaderOptions: DataLoader.Options<KeyType, ModelType[], string> = {
       cacheKeyFn: (k: KeyType): string => {
         if (k?.equals) {
@@ -53,7 +44,7 @@ export function getChildDataLoader<
       for (let index = 0; index < results.length; index++) {
         if (results[index] instanceof Error) {
           const error = results[index] as Error;
-          console.log(`Error while processing data load function: ${error.message}`);
+          console.log(`[Child Data Loader] Error while processing data load function: ${error.message}`);
         } else {
           const childModel: ModelType = results[index] as ModelType;
           const parentId: string = childModel[parentSelector].toString();
