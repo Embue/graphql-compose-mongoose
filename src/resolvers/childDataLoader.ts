@@ -76,11 +76,11 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
   const aliasesReverse = prepareAliasesReverse(model.schema);
 
   return tc.schemaComposer.createResolver<TSource, TArgs<T>>({
-    type: tc.List.NonNull,
+    type: tc.List, // TODO: tc.List.NonNull,
     name: 'childDataLoader',
     kind: 'query',
     args: {
-      _id: tc.hasField('_id') ? toInputType(tc.getFieldTC('_id')).NonNull : 'MongoID!',
+      _id: tc.hasField('_id') ? toInputType(tc.getFieldTC('_id')) : 'MongoID', // TODO: should this be '_ids' instead since this is a find many?
       ...filterHelperArgs(tc, model, {
         prefix: 'FilterFindMany',
         suffix: `${opts?.suffix || ''}Input`,

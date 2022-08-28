@@ -98,7 +98,7 @@ export function paginatedChildDataLoader<TSource, TContext, TDoc extends Documen
     name: 'paginatedChildDataLoader',
     kind: 'query',
     args: {
-      _id: tc.hasField('_id') ? toInputType(tc.getFieldTC('_id')).NonNull : 'MongoID!',
+      _id: tc.hasField('_id') ? toInputType(tc.getFieldTC('_id')) : 'MongoID', // TODO: should this be '_ids' instead since this is a find many?
       ...filterHelperArgs(tc, model, {
         prefix: 'FilterFindMany',
         suffix: `${opts?.suffix || ''}Input`,
