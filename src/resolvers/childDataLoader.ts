@@ -58,7 +58,7 @@ export interface ChildDataLoaderResolverOpts extends DataLoaderResolverOpts {
 export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T = string>(
   model: Model<TDoc>,
   tc: ObjectTypeComposer<TDoc, TContext> | InterfaceTypeComposer<TDoc, TContext>,
-  opts: ChildDataLoaderResolverOpts
+  opts: ChildDataLoaderResolverOpts,
 ): Resolver<TSource, TContext, TArgs<T>, TDoc> {
   if (!model || !model.modelName || !model.schema) {
     throw new Error(
@@ -76,7 +76,7 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
   const aliasesReverse = prepareAliasesReverse(model.schema);
 
   return tc.schemaComposer.createResolver<TSource, TArgs<T>>({
-    type: tc.List, // TODO: tc.List.NonNull,
+    type: tc.List.NonNull, // TODO: tc.List.NonNull,
     name: 'childDataLoader',
     kind: 'query',
     args: {
