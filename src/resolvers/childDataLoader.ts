@@ -1,5 +1,6 @@
 import { toInputType } from 'graphql-compose';
 import type { Resolver, ObjectTypeComposer, InterfaceTypeComposer } from 'graphql-compose';
+import { ObjectTypeComposer as OTC, InterfaceTypeComposer as ITC } from 'graphql-compose';
 import type { Model, Document } from 'mongoose';
 import {
   limitHelperArgs,
@@ -66,9 +67,9 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
     );
   }
 
-  if (!tc || tc.constructor.name !== 'ObjectTypeComposer') {
+  if (!tc || !(tc instanceof OTC || tc instanceof ITC)) {
     throw new Error(
-      'Second arg for Resolver childDataLoader() should be instance of ObjectTypeComposer.'
+      'Second arg for Resolver childDataLoader() should be instance of ObjectTypeComposer or InterfaceTypeComposer.'
     );
   }
 
@@ -76,7 +77,7 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
   const aliasesReverse = prepareAliasesReverse(model.schema);
 
   return tc.schemaComposer.createResolver<TSource, TArgs<T>>({
-    type: tc.List.NonNull, // TODO: tc.List.NonNull,
+    type: tc.List.NonNull,
     name: 'childDataLoader',
     kind: 'query',
     args: {
