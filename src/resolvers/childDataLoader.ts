@@ -20,6 +20,7 @@ import {
 import type { ExtendedResolveParams } from '../';
 import { beforeQueryHelper, beforeQueryHelperLean } from './helpers/beforeQueryHelper';
 import { getChildDataLoader } from './helpers/childDataLoaderHelper';
+import { DiscriminatorTypeComposer } from "../";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface DataLoaderResolverOpts {
@@ -76,8 +77,13 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
   const aliases = prepareNestedAliases(model.schema);
   const aliasesReverse = prepareAliasesReverse(model.schema);
 
+  const type =
+    tc instanceof DiscriminatorTypeComposer
+      ? `[${tc.getInterfaces()[0].getTypeName()}]`
+      : tc.List.NonNull;
+
   return tc.schemaComposer.createResolver<TSource, TArgs<T>>({
-    type: tc.List.NonNull,
+    type: type,
     name: 'childDataLoader',
     kind: 'query',
     args: {
