@@ -19,8 +19,8 @@ import {
 } from './helpers';
 import type { ExtendedResolveParams } from '../';
 import { beforeQueryHelper, beforeQueryHelperLean } from './helpers/beforeQueryHelper';
-import { getChildDataLoader } from './helpers/childDataLoaderHelper';
 import { DiscriminatorTypeComposer } from '../';
+import { getChildDataLoaderSingle } from './helpers/childDataLoaderSingleHelper';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface DataLoaderResolverOpts {
@@ -46,7 +46,7 @@ type TArgs<T> = {
   sort?: string | string[] | Record<string, any>;
 };
 
-export interface ChildDataLoaderResolverOpts extends DataLoaderResolverOpts {
+export interface ChildDataLoaderSingleResolverOpts extends DataLoaderResolverOpts {
   parentSelector: string;
   /** If you want to generate different resolvers you may avoid Type name collision by adding a suffix to type names */
   suffix?: string;
@@ -60,7 +60,7 @@ export interface ChildDataLoaderResolverOpts extends DataLoaderResolverOpts {
 export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T = string>(
   model: Model<TDoc>,
   tc: ObjectTypeComposer<TDoc, TContext> | InterfaceTypeComposer<TDoc, TContext>,
-  opts: ChildDataLoaderResolverOpts,
+  opts: ChildDataLoaderSingleResolverOpts
 ): Resolver<TSource, TContext, TArgs<T>, TDoc> {
   if (!model || !model.modelName || !model.schema) {
     throw new Error(
@@ -79,8 +79,8 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
 
   const type =
     tc instanceof DiscriminatorTypeComposer
-      ? tc.getInterfaces()[0].NonNull.List.NonNull // `[${tc.getInterfaces()[0].getTypeName()}!]!`
-      : tc.List.NonNull;
+      ? tc.getInterfaces()[0].NonNull // `[${tc.getInterfaces()[0].getTypeName()}!]!`
+      : tc.NonNull;
 
   return tc.schemaComposer.createResolver<TSource, TArgs<T>>({
     type: type,
@@ -139,36 +139,31 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
         }
       };
 
-      const dl = getChildDataLoader(
+      const dl = getChildDataLoaderSingle(
         resolveParams.context,
         resolveParams.info,
         opts.parentSelector,
         blf
       );
 
-      return dl.load(args._id).then((res) => {
-        if (res) {
-          const start = resolveParams.args.skip || 0;
-          const end = resolveParams.args.limit
-            ? Math.min(start + resolveParams.args.limit, res.length)
-            : res.length;
-          return res.slice(start, end);
-        } else {
-          return [];
-        }
-      });
+      return dl.load(args._id);
     }) as never,
   });
 }
 
-export function getChildDataLoaderResolver<TSource, TContext, TDoc extends Document<T>, T = string>(
+export function getChildDataLoaderSingleResolver<
+  TSource,
+  TContext,
+  TDoc extends Document<T>,
+  T = string
+>(
   model: Model<TDoc>,
   tc: ObjectTypeComposer<TDoc, TContext> | InterfaceTypeComposer<TDoc, TContext>
-): (opts: ChildDataLoaderResolverOpts) => Resolver<TSource, TContext> {
+): (opts: ChildDataLoaderSingleResolverOpts) => Resolver<TSource, TContext> {
   const typedFn: (
     model: Model<TDoc>,
     tc: ObjectTypeComposer<TDoc, TContext> | InterfaceTypeComposer<TDoc, TContext>,
-    opts: ChildDataLoaderResolverOpts
+    opts: ChildDataLoaderSingleResolverOpts
   ) => Resolver<TSource, TContext, TArgs<T>, TDoc> = childDataLoader;
   return typedFn.bind(undefined, model, tc);
 }

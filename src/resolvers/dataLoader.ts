@@ -54,7 +54,9 @@ export function dataLoader<TSource = any, TContext = any, TDoc extends Document 
     name: 'dataLoader',
     kind: 'query',
     args: {
-      _id: tc.hasField('_id') ? toInputType(tc.getFieldTC('_id')).NonNull : 'MongoID!',
+      _id: tc.hasField('_id')
+        ? toInputType(tc.getFieldTC('_id')).NonNull
+        : 'MongoID!',
     },
     resolve: ((resolveParams: ExtendedResolveParams<TDoc>) => {
       const args = resolveParams.args || {};

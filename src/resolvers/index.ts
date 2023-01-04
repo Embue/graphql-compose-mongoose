@@ -89,4 +89,5 @@ export {
 };
 
 export { getChildDataLoaderResolver } from './childDataLoader';
+export { getChildDataLoaderSingleResolver } from './childDataLoaderSingle';
 export { getPaginatedChildDataLoaderResolver } from './paginatedChildDataLoader';
