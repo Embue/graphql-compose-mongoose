@@ -41,9 +41,7 @@ export function getChildDataLoaderSingle<
 
       const resultMap: { [parentId: string]: ModelType } = {};
 
-      console.log('Got results set', resultMap);
       for (let index = 0; index < results.length; index++) {
-        console.log('got instance of xxx', results[index]);
         if (results[index] instanceof Error) {
           const error = results[index] as Error;
           console.log(
@@ -51,11 +49,9 @@ export function getChildDataLoaderSingle<
           );
         } else {
           try {
-            // if (results[index]) {
             const childModel: ModelType = results[index] as ModelType;
             const parentId: string = childModel[parentSelector].toString();
             resultMap[parentId] = childModel;
-            // }
           } catch (error) {
             console.log('Got child loader error', error);
           }
@@ -63,7 +59,7 @@ export function getChildDataLoaderSingle<
       }
 
       // return docs in the same order as were provided their ids
-      return parentIds.map((parentId) => resultMap[parentId.toString()]) || [];
+      return parentIds.map((parentId) => resultMap[parentId.toString()]) || null;
     }, dataLoaderOptions);
 
     _gqlDataLoaders.set(dlKey, dl);
