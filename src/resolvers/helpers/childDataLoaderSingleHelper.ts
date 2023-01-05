@@ -48,9 +48,15 @@ export function getChildDataLoaderSingle<
             `[Child Data Loader] Error while processing data load function: ${error.message}`
           );
         } else {
-          const childModel: ModelType = results[index] as ModelType;
-          const parentId: string = childModel[parentSelector].toString();
-          resultMap[parentId] = childModel;
+          try {
+            // if (results[index]) {
+            const childModel: ModelType = results[index] as ModelType;
+            const parentId: string = childModel[parentSelector].toString();
+            resultMap[parentId] = childModel;
+            // }
+          } catch (error) {
+            console.log('Got child loader error', error);
+          }
         }
       }
 
