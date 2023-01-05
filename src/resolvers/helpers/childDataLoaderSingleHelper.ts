@@ -41,7 +41,9 @@ export function getChildDataLoaderSingle<
 
       const resultMap: { [parentId: string]: ModelType } = {};
 
+      console.log('Got results set', resultMap);
       for (let index = 0; index < results.length; index++) {
+        console.log('got instance of xxx', results[index]);
         if (results[index] instanceof Error) {
           const error = results[index] as Error;
           console.log(
