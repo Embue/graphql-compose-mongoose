@@ -1,6 +1,10 @@
 import DataLoader, { BatchLoadFn } from 'dataloader';
 import { GraphQLResolveInfo } from 'graphql';
 
+export function getDottedValue(baseObj: any, path: string): any | undefined {
+  return path.split('.').reduce((res, key) => (res ? res[key] : undefined), baseObj);
+}
+
 export function getChildDataLoader<
   KeyType extends { equals?: (test: never) => boolean; toString: () => string },
   ParentSelector extends keyof ModelType,
@@ -47,7 +51,7 @@ export function getChildDataLoader<
           console.log(`[Child Data Loader] Error while processing data load function: ${error.message}`);
         } else {
           const childModel: ModelType = results[index] as ModelType;
-          const parentId: string = childModel[parentSelector].toString();
+          const parentId: string = getDottedValue(childModel, parentSelector.toString()).toString();
           const resultArray: ModelType[] = resultMap[parentId] || [];
           resultMap[parentId] = resultArray;
           resultArray.push(childModel);
