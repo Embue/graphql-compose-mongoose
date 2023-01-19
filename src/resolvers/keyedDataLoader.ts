@@ -9,10 +9,10 @@ import {
 } from './helpers';
 import type { ExtendedResolveParams } from './index';
 import { beforeQueryHelper, beforeQueryHelperLean } from './helpers/beforeQueryHelper';
-import { getDataLoader } from './helpers/dataLoaderHelper';
+import { getKeyedDataLoader } from './helpers/keyedDataLoaderHelper';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface DataLoaderResolverOpts {
+export interface KeyedDataLoaderResolverOpts {
   /**
    * Enabling the lean option tells Mongoose to skip instantiating
    * a full Mongoose document and just give you the plain JavaScript objects.
@@ -25,16 +25,17 @@ export interface DataLoaderResolverOpts {
    * Read more about `lean`: https://mongoosejs.com/docs/tutorials/lean.html
    */
   lean?: boolean;
+  lookupByKey: string;
 }
 
 type TArgs = {
-  _id: any;
+  key: any;
 };
 
-export function dataLoader<TSource = any, TContext = any, TDoc extends Document = any>(
+export function keyedDataLoader<TSource = any, TContext = any, TDoc extends Document = any>(
   model: Model<TDoc>,
   tc: ObjectTypeComposer<TDoc, TContext> | InterfaceTypeComposer<TDoc, TContext>,
-  opts?: DataLoaderResolverOpts
+  opts: KeyedDataLoaderResolverOpts = { lean: false, lookupByKey: '_id' }
 ): Resolver<TSource, TContext, TArgs, TDoc> {
   if (!model || !model.modelName || !model.schema) {
     throw new Error('First arg for Resolver dataLoader() should be instance of Mongoose Model.');
@@ -54,14 +55,14 @@ export function dataLoader<TSource = any, TContext = any, TDoc extends Document 
     name: 'dataLoader',
     kind: 'query',
     args: {
-      _id: tc.hasField('_id')
-        ? toInputType(tc.getFieldTC('_id')).NonNull
+      key: tc.hasField(opts.lookupByKey)
+        ? toInputType(tc.getFieldTC(opts.lookupByKey)).NonNull
         : 'MongoID!',
     },
     resolve: ((resolveParams: ExtendedResolveParams<TDoc>) => {
       const args = resolveParams.args || {};
 
-      if (!args._id) {
+      if (!args.key) {
         return Promise.resolve(null);
       }
 
@@ -71,24 +72,29 @@ export function dataLoader<TSource = any, TContext = any, TDoc extends Document 
         );
       }
 
-      const dl = getDataLoader(resolveParams.context, resolveParams.info, async (ids) => {
-        resolveParams.query = model.find({
-          _id: { $in: ids },
-        } as any);
-        resolveParams.model = model;
-        projectionHelper(resolveParams, aliases);
+      const dl = getKeyedDataLoader(
+        resolveParams.context,
+        resolveParams.info,
+        async (keys) => {
+          const queryObj = {} as any;
+          queryObj[opts.lookupByKey] = { $in: keys };
+          resolveParams.query = model.find(queryObj);
+          resolveParams.model = model;
+          projectionHelper(resolveParams, aliases);
 
-        if (opts?.lean) {
-          const result = (await beforeQueryHelperLean(resolveParams)) || [];
-          return Array.isArray(result) && aliasesReverse
-            ? result.map((r) => replaceAliases(r, aliasesReverse))
-            : result;
-        } else {
-          return beforeQueryHelper(resolveParams) || [];
-        }
-      });
+          if (opts?.lean) {
+            const result = (await beforeQueryHelperLean(resolveParams)) || [];
+            return Array.isArray(result) && aliasesReverse
+              ? result.map((r) => replaceAliases(r, aliasesReverse))
+              : result;
+          } else {
+            return beforeQueryHelper(resolveParams) || [];
+          }
+        },
+        opts.lookupByKey
+      );
 
-      return dl.load(args._id);
+      return dl.load(args.key);
     }) as any,
   });
 }
