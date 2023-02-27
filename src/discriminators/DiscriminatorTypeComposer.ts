@@ -9,6 +9,7 @@ import {
   ObjectTypeComposerFieldConfigAsObjectDefinition,
   graphqlVersion,
 } from 'graphql-compose';
+import type { DirectiveArgs } from 'graphql-compose';
 import type { Model } from 'mongoose';
 import { composeWithMongoose, ComposeWithMongooseOpts } from '../composeWithMongoose';
 import { composeChildTC } from './composeChildTC';
@@ -372,6 +373,23 @@ export class DiscriminatorTypeComposer<TSource, TContext> extends ObjectTypeComp
 
     for (const childTC of this.childTCs) {
       childTC.addRelation(fieldName, relationOpts);
+    }
+
+    return this;
+  }
+
+  setFieldDirectiveByName(
+    fieldName: string,
+    directiveName: string,
+    args?: DirectiveArgs,
+    skipPropagateToSubtypes?: boolean
+  ): this {
+    super.setFieldDirectiveByName(fieldName, directiveName, args);
+
+    if (!skipPropagateToSubtypes) {
+      for (const childTC of this.childTCs) {
+        childTC.setFieldDirectiveByName(fieldName, directiveName, args);
+      }
     }
 
     return this;
