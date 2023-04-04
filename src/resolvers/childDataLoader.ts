@@ -79,8 +79,8 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
 
   const type =
     tc instanceof DiscriminatorTypeComposer
-      ? tc.getInterfaces()[0].NonNull.List // `[${tc.getInterfaces()[0].getTypeName()}!]!`
-      : tc.List;
+      ? tc.getInterfaces()[0].NonNull.List.NonNull // `[${tc.getInterfaces()[0].getTypeName()}!]!`
+      : tc.List.NonNull;
 
   return tc.schemaComposer.createResolver<TSource, TArgs<T>>({
     type: type,
