@@ -29,8 +29,8 @@ export function sortHelperArgs<TDoc extends Document = any>(
   model: Model<TDoc>,
   opts?: SortHelperArgsOpts
 ): ObjectTypeComposerArgumentConfigMapDefinition<{ sort: any }> {
-  if (!tc || tc.constructor.name !== 'ObjectTypeComposer') {
-    throw new Error('First arg for sortHelperArgs() should be instance of ObjectTypeComposer.');
+  if (!tc || !(tc instanceof ObjectTypeComposer || tc instanceof InterfaceTypeComposer)) {
+    throw new Error('First arg for sortHelperArgs() should be instance of ObjectTypeComposer or InterfaceTypeController.');
   }
 
   if (!model || !model.modelName || !model.schema) {

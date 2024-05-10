@@ -14,6 +14,7 @@ import { removeById, RemoveByIdResolverOpts } from './removeById';
 import { removeMany, RemoveManyResolverOpts } from './removeMany';
 import { removeOne, RemoveOneResolverOpts } from './removeOne';
 import { dataLoader, DataLoaderResolverOpts } from './dataLoader';
+import { keyedDataLoader, KeyedDataLoaderResolverOpts } from './keyedDataLoader';
 import { dataLoaderMany, DataLoaderManyResolverOpts } from './dataLoaderMany';
 import { pagination, PaginationResolverOpts } from './pagination';
 import { connection, ConnectionResolverOpts } from './connection';
@@ -25,6 +26,7 @@ export type AllResolversOpts = {
   findOne?: false | FindOneResolverOpts;
   findMany?: false | FindManyResolverOpts;
   dataLoader?: false | DataLoaderResolverOpts;
+  keyedDataLoader?: false | KeyedDataLoaderResolverOpts;
   dataLoaderMany?: false | DataLoaderManyResolverOpts;
   createOne?: false | CreateOneResolverOpts;
   createMany?: false | CreateManyResolverOpts;
@@ -55,6 +57,7 @@ export const resolverFactory = {
   findOne,
   findMany,
   dataLoader,
+  keyedDataLoader,
   dataLoaderMany,
   createOne,
   createMany,
@@ -83,7 +86,12 @@ export {
   RemoveManyResolverOpts,
   RemoveOneResolverOpts,
   DataLoaderResolverOpts,
+  KeyedDataLoaderResolverOpts,
   DataLoaderManyResolverOpts,
   PaginationResolverOpts,
   ConnectionResolverOpts,
 };
+
+export { getChildDataLoaderResolver } from './childDataLoader';
+export { getChildDataLoaderSingleResolver } from './childDataLoaderSingle';
+export { getPaginatedChildDataLoaderResolver } from './paginatedChildDataLoader';
