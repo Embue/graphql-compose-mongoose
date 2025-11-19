@@ -109,7 +109,7 @@ export function childDataLoader<TSource, TContext, TDoc extends Document<T>, T =
       resolveParams.projection = projection;
 
       if (!args._id) {
-        return Promise.resolve(null);
+        return Promise.resolve([]);
       }
 
       if (!resolveParams.info) {
