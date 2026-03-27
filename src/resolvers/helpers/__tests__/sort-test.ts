@@ -55,7 +55,7 @@ describe('Resolver helper `sort` ->', () => {
         const wrongArgs: any = [{}];
         // @ts-expect-error
         sortHelperArgs(...wrongArgs);
-      }).toThrowError('should be instance of ObjectTypeComposer');
+      }).toThrowError('should be instance of ObjectTypeComposer or InterfaceTypeController');
     });
 
     it('should throw error if second arg is not Mongoose model', () => {

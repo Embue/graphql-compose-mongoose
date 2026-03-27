@@ -25,7 +25,7 @@ describe('Resolver helper `filter` ->', () => {
         const wrongArgs: any = [{}];
         // @ts-expect-error
         filterHelperArgs(...wrongArgs);
-      }).toThrowError('should be instance of ObjectTypeComposer');
+      }).toThrowError('should be instance of ObjectTypeComposer or InterfaceTypeController');
     });
 
     it('should throw error if second arg is not MongooseModel', () => {

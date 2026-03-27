@@ -35,7 +35,7 @@ export function prepareBaseResolvers(baseTC: DiscriminatorTypeComposer<any, any>
       switch (resolverName) {
         case 'findMany':
         case 'findByIds':
-          resolver.setType(baseTC.getDInterface().List);
+          resolver.setType(baseTC.getDInterface().NonNull.List.NonNull);
           resolver.projection[baseTC.getDKey()] = 1;
           break;
 

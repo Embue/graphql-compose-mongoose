@@ -5,6 +5,8 @@ import { getRecordHelperArgsOptsMap } from './record';
 export * from './aliases';
 export * from './filter';
 export * from './limit';
+export * from './perPage';
+export * from './page';
 export * from './projection';
 export * from './record';
 export * from './skip';
